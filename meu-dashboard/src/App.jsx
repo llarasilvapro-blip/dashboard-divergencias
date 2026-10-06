@@ -57,13 +57,13 @@ export default function App() {
     });
   }, [data, selectedUnidade, selectedStatus, selectedPagamento]);
 
-  // Totalizadores Globais da Base (para % comparativo)
+  // Totalizadores Globais
   const totalGeralNotas = data.length || 1;
   const totalGeralMontante = useMemo(() => {
     return data.reduce((acc, row) => acc + (parseFloat(row["MONTANTE"]) || 0), 0) || 1;
   }, [data]);
 
-  // KPIs Principais
+  // KPIs
   const totalRegistros = filteredData.length;
   const pctNotasFiltradas = ((totalRegistros / totalGeralNotas) * 100).toFixed(1);
 
@@ -88,7 +88,7 @@ export default function App() {
     return sum / filteredData.length;
   }, [filteredData]);
 
-  // 1. TOP 10 FORNECEDORES
+  // Top 10 Fornecedores
   const topFornecedoresData = useMemo(() => {
     const map = {};
     filteredData.forEach(row => {
@@ -110,7 +110,7 @@ export default function App() {
       .slice(0, 10);
   }, [filteredData, montanteBloqueado]);
 
-  // 2. NEGOCIADORES / COMPRADORES
+  // Negociadores
   const negociadorTableData = useMemo(() => {
     const map = {};
     filteredData.forEach(row => {
@@ -132,7 +132,7 @@ export default function App() {
       .sort((a, b) => b.montante - a.montante);
   }, [filteredData, totalRegistros, montanteBloqueado]);
 
-  // 3. MATRIZ DE CRITICIDADE (AGING x MONTANTE) - EM SUBSTITUIÇÃO AO RESPONSÁVEL
+  // Matriz de Criticidade (Aging x Montante)
   const matrizCriticidadeData = useMemo(() => {
     let critico = { notas: 0, montante: 0 };
     let atencao = { notas: 0, montante: 0 };
@@ -185,7 +185,7 @@ export default function App() {
     ];
   }, [filteredData, totalRegistros, montanteBloqueado]);
 
-  // 4. TABELA DE DIVERGÊNCIAS POR TIPO E MOTIVO
+  // Tabela Tipo e Motivo
   const divergenciasTipoMotivoData = useMemo(() => {
     const map = {};
     filteredData.forEach(row => {
@@ -214,7 +214,7 @@ export default function App() {
       .sort((a, b) => b.montante - a.montante);
   }, [filteredData, totalRegistros, montanteBloqueado]);
 
-  // 5. AGING DO BLOQUEIO POR FAIXAS
+  // Aging Chart
   const agingChartData = useMemo(() => {
     const buckets = { '-30...0': { notas: 0, montante: 0 }, '1-15': { notas: 0, montante: 0 }, '16-30': { notas: 0, montante: 0 }, '31-60': { notas: 0, montante: 0 }, '61-90': { notas: 0, montante: 0 }, 'Acima 90': { notas: 0, montante: 0 } };
     filteredData.forEach(row => {
@@ -234,7 +234,7 @@ export default function App() {
     }));
   }, [filteredData, totalRegistros, montanteBloqueado]);
 
-  // 6. VENCIMENTO DAS FATURAS (DONUT)
+  // Vencimento Donut
   const vencimentoPieData = useMemo(() => {
     const map = {};
     filteredData.forEach(row => {
@@ -248,7 +248,7 @@ export default function App() {
     }));
   }, [filteredData, totalRegistros]);
 
-  // 7. INCONSISTÊNCIAS POR PLANTA OPERACIONAL (Qtd vs Montante)
+  // Planta Operacional Chart
   const plantaChartData = useMemo(() => {
     const map = {};
     filteredData.forEach(row => {
@@ -268,7 +268,6 @@ export default function App() {
   }, [filteredData, totalRegistros, montanteBloqueado]);
 
   const formatBRL = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(val);
-
   return (
     <div className="min-h-screen p-6 bg-[#0b0f19] text-white font-sans">
       {/* HEADER */}
@@ -311,9 +310,259 @@ export default function App() {
         </div>
       </div>
 
-      {/* KPIS PRINCIPAIS (COM TOTAL DE NOTAS E %) */}
+      {/* KPIS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <div className="bg-[#131927] p-4 rounded-lg border border-gray-800">
           <span className="text-[10px] text-gray-400 uppercase font-semibold">TOTAL DE NOTAS</span>
           <p className="text-2xl font-bold text-white mt-1">{totalRegistros}</p>
-          <span className="text
+          <span className="text-[10px] text-cyan-400 font-medium">{pctNotasFiltradas}% do total</span>
+        </div>
+
+        <div className="bg-[#131927] p-4 rounded-lg border border-gray-800">
+          <span className="text-[10px] text-gray-400 uppercase font-semibold">MONTANTE BLOQUEADO</span>
+          <p className="text-2xl font-bold text-emerald-400 mt-1">{formatBRL(montanteBloqueado)}</p>
+          <span className="text-[10px] text-emerald-400/80 font-medium">{pctMontanteFiltrado}% do total</span>
+        </div>
+
+        <div className="bg-[#131927] p-4 rounded-lg border border-gray-800">
+          <span className="text-[10px] text-gray-400 uppercase font-semibold">TOTAL DA DIFERENÇA</span>
+          <p className="text-2xl font-bold text-cyan-400 mt-1">{formatBRL(totalDiferenca)}</p>
+          <span className="text-[10px] text-gray-500">
+            {montanteBloqueado ? ((totalDiferenca / montanteBloqueado) * 100).toFixed(1) : 0}% do montante
+          </span>
+        </div>
+
+        <div className="bg-[#131927] p-4 rounded-lg border border-gray-800">
+          <span className="text-[10px] text-gray-400 uppercase font-semibold">% MÉDIO DIVERGÊNCIA</span>
+          <p className="text-2xl font-bold text-purple-400 mt-1">{pctMediaDivergencia.toFixed(1)}%</p>
+          <span className="text-[10px] text-gray-500">Média ponderada % DIF</span>
+        </div>
+
+        <div className="bg-[#131927] p-4 rounded-lg border border-gray-800">
+          <span className="text-[10px] text-gray-400 uppercase font-semibold">AGING MÉDIO BLOQUEIO</span>
+          <p className="text-2xl font-bold text-amber-400 mt-1">{agingMedio.toFixed(1)} dias</p>
+          <span className="text-[10px] text-gray-500">Dias decorridos em média</span>
+        </div>
+      </div>
+
+      {data.length > 0 ? (
+        <>
+          {/* RANKING FORNECEDORES */}
+          <div className="bg-[#131927] p-4 rounded-lg border border-gray-800 mb-6">
+            <h2 className="text-xs font-semibold mb-3 text-gray-300 uppercase tracking-wider">RANKING DE FORNECEDORES OFENSORES (TOP 10 MONTANTE E %)</h2>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topFornecedoresData} layout="vertical">
+                  <XAxis type="number" stroke="#6b7280" tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                  <YAxis type="category" dataKey="name" stroke="#6b7280" width={170} tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                  <Tooltip 
+                    formatter={(value, name, props) => [`${formatBRL(value)} (${props.payload.pct}%)`, 'Montante']} 
+                    contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '6px', fontSize: '12px' }} 
+                  />
+                  <Bar dataKey="montante" fill="#06b6d4" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* COMPRADORES E MATRIZ DE CRITICIDADE */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 text-xs">
+            <div className="bg-[#131927] p-4 rounded-lg border border-gray-800">
+              <h2 className="text-xs font-semibold mb-3 text-gray-300 uppercase tracking-wider">DESEMPENHO POR NEGOCIADOR / COMPRADOR</h2>
+              <div className="overflow-x-auto max-h-64">
+                <table className="w-full text-left border-collapse">
+                  <thead className="sticky top-0 bg-[#131927]">
+                    <tr className="border-b border-gray-800 text-gray-400 text-[10px] uppercase">
+                      <th className="pb-2">Nome</th>
+                      <th className="pb-2 text-center">Notas (% Tot)</th>
+                      <th className="pb-2 text-right">Montante (% Tot)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800/50">
+                    {negociadorTableData.map((row, i) => (
+                      <tr key={i} className="hover:bg-[#1a2234]">
+                        <td className="py-2 text-gray-200 font-medium">{row.name}</td>
+                        <td className="py-2 text-center text-gray-300">
+                          {row.notas} <span className="text-[10px] text-cyan-400">({row.pctNotas}%)</span>
+                        </td>
+                        <td className="py-2 text-right text-emerald-400 font-medium">
+                          {formatBRL(row.montante)} <span className="text-[10px] text-emerald-300">({row.pctMontante}%)</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* QUADRANTE COM A MATRIZ DE CRITICIDADE */}
+            <div className="bg-[#131927] p-4 rounded-lg border border-gray-800">
+              <div className="flex justify-between items-center mb-3">
+                <h2 className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                  MATRIZ DE CRITICIDADE (AGING x MONTANTE)
+                </h2>
+                <span className="text-[10px] text-gray-400 bg-gray-800/60 px-2 py-0.5 rounded">
+                  Priorização de Resolução
+                </span>
+              </div>
+
+              <div className="space-y-2.5 pt-1">
+                {matrizCriticidadeData.map((item, idx) => (
+                  <div key={idx} className="bg-[#1a2234] p-3 rounded-lg border border-gray-800/80 flex flex-col justify-between">
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded border ${item.corBadge}`}>
+                          {item.nivel}
+                        </span>
+                        <span className="text-[11px] text-gray-400 hidden sm:inline">{item.descricao}</span>
+                      </div>
+                      <span className="text-xs font-semibold text-gray-300">
+                        {item.notas} notas <span className="text-cyan-400 font-bold">({item.pctNotas}%)</span>
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-baseline mt-1">
+                      <span className="text-[11px] text-gray-400">Montante Retido:</span>
+                      <div className="text-right">
+                        <span className={`text-base font-extrabold ${item.corTexto}`}>
+                          {formatBRL(item.montante)}
+                        </span>
+                        <span className="text-[10px] text-gray-400 ml-1 font-medium">
+                          ({item.pctMontante}% do total)
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="w-full bg-gray-800/80 h-1.5 rounded-full overflow-hidden mt-2">
+                      <div 
+                        className={`h-full rounded-full ${item.nivel === 'Crítico' ? 'bg-red-500' : item.nivel === 'Atenção' ? 'bg-amber-500' : 'bg-emerald-500'}`} 
+                        style={{ width: `${item.pctMontante}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* TABELA DE DIVERGÊNCIAS POR TIPO E MOTIVO */}
+          <div className="bg-[#131927] p-4 rounded-lg border border-gray-800 mb-6 text-xs">
+            <h2 className="text-xs font-semibold mb-3 text-gray-300 uppercase tracking-wider">TABELA DE DIVERGÊNCIAS POR TIPO E MOTIVO</h2>
+            <div className="overflow-x-auto max-h-64">
+              <table className="w-full text-left border-collapse">
+                <thead className="sticky top-0 bg-[#131927]">
+                  <tr className="border-b border-gray-800 text-gray-400 text-[10px] uppercase">
+                    <th className="pb-2">Tipo</th>
+                    <th className="pb-2">Motivo</th>
+                    <th className="pb-2 text-center">Qtd. Notas</th>
+                    <th className="pb-2 text-center">% Qtd.</th>
+                    <th className="pb-2 text-right">Montante (R$)</th>
+                    <th className="pb-2 text-right">% Montante</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800/50">
+                  {divergenciasTipoMotivoData.map((row, i) => (
+                    <tr key={i} className="hover:bg-[#1a2234]">
+                      <td className="py-2 text-cyan-400 font-semibold">{row.tipo}</td>
+                      <td className="py-2 text-gray-300">{row.motivo}</td>
+                      <td className="py-2 text-center text-gray-200 font-medium">{row.notas}</td>
+                      <td className="py-2 text-center text-cyan-400 font-medium">{row.pctNotas}%</td>
+                      <td className="py-2 text-right text-emerald-400 font-medium">{formatBRL(row.montante)}</td>
+                      <td className="py-2 text-right text-emerald-300 font-medium">{row.pctMontante}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* AGING E VENCIMENTO */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            <div className="lg:col-span-2 bg-[#131927] p-4 rounded-lg border border-gray-800">
+              <h2 className="text-xs font-semibold mb-3 text-gray-300 uppercase tracking-wider">AGING DO BLOQUEIO (NOTAS, MONTANTE E %)</h2>
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={agingChartData}>
+                    <XAxis dataKey="faixa" stroke="#6b7280" tick={{ fontSize: 11, fill: '#9ca3af' }} />
+                    <YAxis yAxisId="left" stroke="#06b6d4" tick={{ fontSize: 11, fill: '#06b6d4' }} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" tick={{ fontSize: 11, fill: '#f59e0b' }} />
+                    <Tooltip 
+                      formatter={(val, name, props) => name === "Notas" 
+                        ? [`${val} (${props.payload.pctNotas}%)`, name] 
+                        : [`${formatBRL(val)} (${props.payload.pctMontante}%)`, name]}
+                      contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '6px', fontSize: '12px' }} 
+                    />
+                    <Bar yAxisId="left" dataKey="Notas" fill="#06b6d4" name="Notas" radius={[2, 2, 0, 0]} />
+                    <Bar yAxisId="right" dataKey="Montante" fill="#f59e0b" name="Montante (R$)" radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-[#131927] p-4 rounded-lg border border-gray-800">
+              <h2 className="text-xs font-semibold mb-3 text-gray-300 uppercase tracking-wider">VENCIMENTO DAS FATURAS BLOQUEADAS</h2>
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={vencimentoPieData} innerRadius={40} outerRadius={65} paddingAngle={3} dataKey="value">
+                      {vencimentoPieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(val, name, props) => [`${val} notas (${props.payload.pct}%)`, name]} 
+                      contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '6px', fontSize: '12px' }} 
+                    />
+                    <Legend wrapperStyle={{ fontSize: '10px', color: '#9ca3af' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* INCONSISTÊNCIAS POR PLANTA */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            <div className="bg-[#131927] p-4 rounded-lg border border-gray-800">
+              <h2 className="text-xs font-semibold mb-3 text-cyan-400 uppercase tracking-wider">INCONSISTÊNCIAS POR PLANTA — QTD. NOTAS (% DO TOTAL)</h2>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={plantaChartData}>
+                    <XAxis dataKey="unidade" stroke="#6b7280" tick={{ fontSize: 9, fill: '#9ca3af' }} interval={0} angle={-25} textAnchor="end" />
+                    <YAxis stroke="#06b6d4" tick={{ fontSize: 10, fill: '#06b6d4' }} />
+                    <Tooltip 
+                      formatter={(value, name, props) => [`${value} notas (${props.payload.pctNotas}%)`, 'Notas']}
+                      contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '6px', fontSize: '12px' }} 
+                    />
+                    <Bar dataKey="Notas" fill="#06b6d4" radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-[#131927] p-4 rounded-lg border border-gray-800">
+              <h2 className="text-xs font-semibold mb-3 text-amber-400 uppercase tracking-wider">INCONSISTÊNCIAS POR PLANTA — MONTANTE R$ (% DO TOTAL)</h2>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={plantaChartData}>
+                    <XAxis dataKey="unidade" stroke="#6b7280" tick={{ fontSize: 9, fill: '#9ca3af' }} interval={0} angle={-25} textAnchor="end" />
+                    <YAxis stroke="#f59e0b" tick={{ fontSize: 10, fill: '#f59e0b' }} />
+                    <Tooltip 
+                      formatter={(value, name, props) => [`${formatBRL(value)} (${props.payload.pctMontante}%)`, 'Montante']}
+                      contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '6px', fontSize: '12px' }} 
+                    />
+                    <Bar dataKey="Montante" fill="#f59e0b" radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-24 bg-[#131927] rounded-lg border border-gray-800 text-gray-500 gap-3">
+          <AlertCircle size={40} className="text-gray-600" />
+          <p className="text-xs">Carregue o arquivo de dados para visualizar a análise completa.</p>
+        </div>
+      )}
+    </div>
+  );
+}
